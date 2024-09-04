@@ -3,31 +3,36 @@ import dbClient from '../utils/db';
 
 class AppController {
   /**
-   * Should return if Redis is alive and if the DB is alive too
-   * by using the 2 utils created previously:
+   * Should return if Redis and DB are alive.
    * { "redis": true, "db": true } with a status code 200
    */
-  static getStatus(request, response) {
-    const status = {
-      redis: redisClient.isAlive(),
-      db: dbClient.isAlive(),
-    };
-    response.status(200).json(status);
+  static async getStatus(request, response) {
+    try {
+      const status = {
+        redis: await redisClient.isAlive(),
+        db: await dbClient.isAlive(),
+      };
+      response.status(200).send(status);
+    } catch (error) {
+      console.error('Error checking status:', error);
+      response.status(500).send({ error: 'Internal Server Error' });
+    }
   }
 
   /**
-   * Should return the number of users and files in DB:
+   * Should return the number of users and files in DB.
    * { "users": 12, "files": 1231 } with a status code 200
    */
   static async getStats(request, response) {
     try {
-      const [usersCount, filesCount] = await Promise.all([
-        dbClient.nbUsers(),
-        dbClient.nbFiles(),
-      ]);
-      response.status(200).json({ users: usersCount, files: filesCount });
+      const stats = {
+        users: await dbClient.nbUsers(),
+        files: await dbClient.nbFiles(),
+      };
+      response.status(200).send(stats);
     } catch (error) {
-      response.status(500).json({ error: 'Failed to retrieve stats' });
+      console.error('Error fetching stats:', error);
+      response.status(500).send({ error: 'Internal Server Error' });
     }
   }
 }
